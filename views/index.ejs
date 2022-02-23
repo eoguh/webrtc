@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>udemy webrtc tutorial</title>
+    <link rel="stylesheet" type="text/css" src="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>My video meeting</h1>
+    <div>
+        video <select id="camera"></select>
+    </div>
+    <video autoplay></video>
+    
+    <div>
+        <label>your name</label> <input id="myName" type="text">
+        <label>message</label> <input id="myMessage" type="text">
+        <input type="submit" id="sendMessage">
+        <div id="chatArea"> Message output: <br></div>
+    </div>
+
+    <script>
+        'use strict';
+    
+
+        var videoArea = document.querySelector("video");
+        var videoSelect = document.querySelector("#camera");
+        var myName = document.querySelector("#myName");
+        var myMessage = document.querySelector("#myMessage");
+        var chatArea = document.querySelector("#chatArea");
+        var ROOM = "chat";
+
+
+        navigator.mediaDevices.enumerateDevices()
+            .then(getCameras)
+            .catch((err) => {
+                console.log(err.name + ": " + err.message);
+            });
+
+        videoSelect.onchange = startStream;
+
+        startStream();
+            //---------------------obsolete ---------------------------------
+        // function getCameras(sourceInfos){
+        //     for (var i = 0; i !==sourceInfos.length; i++){
+        //         var sourceInfo = sourceInfos[i];
+        //         var option = document.createElement('option');
+        //         option.value = sourceInfo.id;
+        //         if (sourceInfo.kind ==='video'){
+        //             option.text = sourceInfo.label || 'camera ' + (videoSelect.length + 1);
+        //             videoSelect.appendChild(option);
+        //         }
+        //     }
+        // }
+
+
+        io = io.connect();
+        io.emit('ready', ROOM);
+
+        function getCameras(devices) {
+            devices.forEach(function (device) {
+                var option = document.createElement('option');
+                option.value = device.id;
+                if (device.kind === 'videoinput') {
+                    option.text = device.label || 'camera ' + (videoSelect.length + 1);
+                    videoSelect.appendChild(option);
+                }
+            });
+        }
+
+
+        function startStream(){
+            navigator.getUserMedia = navigator.getUserMedia || 
+            navigator.webkitGetUserMedia || 
+            navigator.mozGetUserMedia;
+
+            var videoSource = videoSelect.value;
+
+            var constraints = {
+                audio:false,
+                video: {
+                    mandatory:{
+                        // maxWidth: 640,
+                        // maxHeight: 480,
+                        // minWidth: 640,
+                        // minHeight: 360, 
+                        maxWidth: 240,
+                        maxHeight: 240,
+                        minWidth: 240,
+                        minHeight: 240, 
+
+                    },
+                    optional: [{
+                        sourceId: videoSource
+                    }]
+                }
+            };
+            navigator.getUserMedia(constraints, onSuccess, onError);
+        }
+ 
+
+
+        function onSuccess(stream){
+            console.log("success we have a stream");
+            try{
+                video.src = window.URL.createObjectURL(stream);
+            }catch(error){
+                videoArea.srcObject = stream;
+            }
+            videoArea.className = "grayscale_filter";
+            videoArea.play();
+            
+        }
+
+        function onError(error){
+            console.log("Error with get user media", error);
+        }
+        
+
+    </script>
+    
+</body>
+</html>
